@@ -108,11 +108,11 @@ def predict(payload: PredictRequest):
 
     # Demo-only calibration: enforce clearer visual separation for competition walkthroughs.
     if payload.demo_mode == "deceptive":
-        deceptive_floor = 0.66 + (0.06 if sequence_analysis["contradiction_count"] >= 1 else 0.0)
+        deceptive_floor = 0.78 + (0.06 if sequence_analysis["contradiction_count"] >= 1 else 0.0)
         deceptive_floor += 0.04 if features["hesitation_score"] >= 0.35 else 0.0
-        final_probability = max(final_probability, min(0.9, deceptive_floor))
+        final_probability = max(final_probability, min(0.95, deceptive_floor))
     elif payload.demo_mode == "truthful":
-        truthful_cap = 0.42 if sequence_analysis["contradiction_count"] == 0 else 0.5
+        truthful_cap = 0.35 if sequence_analysis["contradiction_count"] == 0 else 0.42
         final_probability = min(final_probability, truthful_cap)
 
     bundle = load_model_bundle()

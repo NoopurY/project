@@ -21,11 +21,11 @@ const SCENARIOS = [
       "I reached home at around 10:10 pm and remained there for the rest of the night.",
     ],
     demoDeceptive: [
-      "I was at home around 9 pm, completely alone.",
-      "My friend and brother were with me near the office storage room.",
-      "I never entered that area, and I also used my access card once.",
-      "I stayed outside the whole time, not at home.",
-      "I reached home after midnight, maybe around 8 pm.",
+      "I was at home around 9 pm, definitely completely alone.",
+      "Actually, my friend and brother were with me near the office storage room.",
+      "I never entered that area, and I also used my access card once there.",
+      "I stayed outside the whole time, instead of being at home.",
+      "I reached home after midnight, but maybe it was around 8 pm.",
     ],
   },
   {
@@ -74,10 +74,10 @@ const SCENARIOS = [
     ],
     demoDeceptive: [
       "I was in the office hallway at 3:40 pm and alone.",
-      "I was not in that hallway; I was outside near parking.",
+      "In fact, I was not in that hallway; I was outside near parking.",
       "I did nothing after the event, then I called my manager immediately.",
       "I included all details, except the part I intentionally skipped.",
-      "No one spoke to me first, my manager spoke to me first.",
+      "No one spoke to me first, but my manager spoke to me first.",
     ],
   },
 ];

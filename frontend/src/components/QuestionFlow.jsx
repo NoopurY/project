@@ -19,6 +19,71 @@ function listFromMemory(value) {
   return value.join(", ");
 }
 
+function buildDemoFollowupAnswer({ scenarioId, mode, questionText }) {
+  const q = (questionText || "").toLowerCase();
+
+  const truthful = {
+    theft: {
+      who: "My manager and one colleague were around the storage section during that period.",
+      where: "I was in the office storage corridor and then moved directly toward the exit.",
+      time: "The main sequence was around 9:05 to 9:10 pm, and I reached home at about 10:10 pm.",
+      action: "I picked up my charger, informed my manager, and then drove home.",
+      default: "To be precise: office storage corridor at around 9:05-9:10 pm, then home by 10:10 pm.",
+    },
+    academic: {
+      who: "No one helped me with answers; I worked independently during the exam.",
+      where: "I prepared in the campus library and completed the exam in the exam hall.",
+      time: "Preparation was 7 to 9 pm, and the exam timeline was 10:00 to 11:20 am.",
+      action: "I revised my notes, attempted the paper alone, and submitted at 11:20 am.",
+      default: "My account is: library prep, no answer-sharing, then a 10:00-11:20 am exam.",
+    },
+    workplace: {
+      who: "My manager was the first person I spoke to immediately after the incident.",
+      where: "I was in the office hallway just before the incident and stayed in that area.",
+      time: "It occurred around 3:40 pm and I filed the report within about fifteen minutes.",
+      action: "I informed my supervisor first and filed the report with the same timeline details.",
+      default: "The sequence is consistent: hallway before event, manager informed, then report filed.",
+    },
+  };
+
+  const deceptive = {
+    theft: {
+      who: "I was alone, but maybe my friend and brother were somewhere nearby.",
+      where: "I was at home, and also outside near the storage side for a short time.",
+      time: "It was around 9 pm, maybe closer to midnight, or maybe around 8.",
+      action: "I did not enter there, though I may have used the access card once.",
+      default: "I already explained it, but some details may sound different because it happened fast.",
+    },
+    academic: {
+      who: "No one helped me, except my classmate may have sent me something.",
+      where: "I prepared at home, but some discussion happened near campus too.",
+      time: "I submitted around 10, then started around 10:20, I think.",
+      action: "I did not communicate answers, but we may have followed similar steps.",
+      default: "I am not sure of the exact sequence, but both statements could be true in context.",
+    },
+    workplace: {
+      who: "No one spoke first, although my manager may have spoken first.",
+      where: "I was not in the hallway, I was outside near parking, then close to hallway.",
+      time: "It was around 3:40 pm, roughly around that window.",
+      action: "I did nothing right after it, then I called my manager immediately.",
+      default: "Some details changed because I was stressed, but the overall account is similar.",
+    },
+  };
+
+  const bank = mode === "truthful" ? truthful[scenarioId] : deceptive[scenarioId];
+  if (!bank) {
+    return mode === "truthful"
+      ? "Let me clarify with specific details: exact place, exact time, and exact sequence."
+      : "I am not fully sure of every detail, but that is what I remember.";
+  }
+
+  if (q.includes("who")) return bank.who;
+  if (q.includes("where") || q.includes("location")) return bank.where;
+  if (q.includes("time") || q.includes("timeline") || q.includes("sequence")) return bank.time;
+  if (q.includes("action") || q.includes("did") || q.includes("happened")) return bank.action;
+  return bank.default;
+}
+
 function QuestionFlow({ scenario, demoMode, apiBase, onComplete }) {
   const [baseIndex, setBaseIndex] = useState(0);
   const [activeQuestion, setActiveQuestion] = useState({
@@ -47,8 +112,6 @@ function QuestionFlow({ scenario, demoMode, apiBase, onComplete }) {
   const typingStartRef = useRef(null);
   const latestTypingRef = useRef(null);
 
-  const demoAnswerIndexRef = useRef(0);
-
   useEffect(() => {
     questionStartRef.current = performance.now();
     typingStartRef.current = null;
@@ -65,11 +128,13 @@ function QuestionFlow({ scenario, demoMode, apiBase, onComplete }) {
     const candidate = source[activeQuestion.baseIndex] || source[source.length - 1] || "I am not sure.";
 
     if (activeQuestion.type === "followup") {
-      if (demoMode === "truthful") {
-        setAnswer("To clarify, I gave the exact details from memory and there is no contradiction.");
-      } else {
-        setAnswer("I am not sure, maybe both statements are true in different ways.");
-      }
+      setAnswer(
+        buildDemoFollowupAnswer({
+          scenarioId: scenario.id,
+          mode: demoMode,
+          questionText: activeQuestion.text,
+        })
+      );
       return;
     }
 

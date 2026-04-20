@@ -50,6 +50,7 @@ def followup(payload: FollowupRequest):
         previous_memory=previous_memory,
         new_response=responses[-1],
         contradiction=contradiction_for_latest,
+        current_question=payload.history[-1].question,
     )
 
     return {

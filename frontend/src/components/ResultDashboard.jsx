@@ -105,7 +105,9 @@ function ResultDashboard({ result, onRestart }) {
             className="rounded-xl border border-white/10 bg-[#0d0918] p-4"
           >
             <p className="text-xs uppercase tracking-[0.12em] text-violet-200/55">{metricLabel(key)}</p>
-            <p className="mt-2 text-lg font-semibold text-white">{value}</p>
+            <p className="mt-2 text-lg font-semibold text-white">
+              {Array.isArray(value) ? value.join(", ") : value}
+            </p>
           </motion.div>
         ))}
       </div>

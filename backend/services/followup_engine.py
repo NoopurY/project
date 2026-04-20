@@ -19,8 +19,10 @@ def generate_followup_question(
     previous_memory: dict,
     new_response: str,
     contradiction: dict,
+    current_question: str | None = None,
 ) -> str | None:
     extracted = extract_structured_info(new_response)
+    current_question = (current_question or "").strip()
 
     if contradiction.get("count", 0) > 0:
         prev_location = previous_memory.get("location", [])
@@ -29,21 +31,46 @@ def generate_followup_question(
         if "location_conflict" in contradiction.get("types", []):
             if prev_location and new_location:
                 return (
-                    f"Earlier you said you were at {prev_location[0]}, now you mention {new_location[0]}. "
-                    "Can you clarify this difference?"
+                    f"You previously referenced {prev_location[0]}, but now you mention {new_location[0]}. "
+                    "State one exact location for this moment and explain only that timeline step."
                 )
-            return "Your location details seem inconsistent. Can you clarify exactly where you were?"
+            return "Your location details are inconsistent. Give one precise location and avoid alternatives."
 
         if "time_conflict" in contradiction.get("types", []):
-            return "Your timeline appears inconsistent. Please explain the exact sequence of times."
+            return (
+                "Your timeline appears inconsistent. Provide one ordered sequence with exact times "
+                "from start to finish in a single line."
+            )
 
         if "people_conflict" in contradiction.get("types", []):
-            return "You gave conflicting details about who was present. Who exactly was there with you?"
+            return (
+                "You gave conflicting details about who was present. "
+                "List exactly who was there, and if alone, explicitly confirm no one else was present."
+            )
+
+        if "action_conflict" in contradiction.get("types", []):
+            return (
+                "Your action details conflict. State clearly what you did, what you did not do, "
+                "and the order of those actions."
+            )
+
+        if "statement_conflict" in contradiction.get("types", []):
+            if any(term in new_response.lower() for term in ["skip", "except", "withhold", "forgot", "omitted"]):
+                return (
+                    "You admitted to skipping or omitting certain details. Interrogation protocols require "
+                    "a full disclosure. Why were those details withheld, and what are those specific details?"
+                )
+            return (
+                "Your latest response contains opposite claims in one statement. "
+                "Rewrite your answer as one clear, consistent version."
+            )
 
         return "There appears to be a contradiction with your earlier statement. Can you explain it clearly?"
 
     if is_vague_response(new_response):
-        return "Your response is a bit vague. Please provide more specific details."
+        if current_question:
+            return f"Please answer more specifically: {current_question}"
+        return "Your response is vague. Provide specific time, location, people, and action details."
 
     missing_targeted = _targeted_missing_info_question(extracted)
     if missing_targeted:

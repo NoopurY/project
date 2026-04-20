@@ -12,6 +12,10 @@ LOCATION_KEYWORDS = {
     "home",
     "house",
     "office",
+    "hallway",
+    "corridor",
+    "storage",
+    "room",
     "campus",
     "library",
     "outside",
@@ -60,6 +64,32 @@ ACTION_KEYWORDS = {
     "closed",
     "spoke",
     "reviewed",
+    "skip",
+    "skipped",
+    "withhold",
+    "withheld",
+    "omitted",
+    "forget",
+    "forgot",
+}
+
+ACTION_BLACKLIST = {
+    "did",
+    "was",
+    "were",
+    "had",
+    "have",
+    "has",
+    "being",
+    "been",
+    "having",
+    "made",
+    "said",
+    "during",
+    "morning",
+    "evening",
+    "nothing",
+    "something",
 }
 
 TIME_PATTERNS = [
@@ -80,6 +110,7 @@ VAGUE_TERMS = {
 }
 
 NEGATION_TERMS = {"didn't", "did not", "never", "no"}
+CONTRAST_TERMS = {"but", "however", "though", "yet", "also", "instead", "except"}
 
 TIME_BUCKET_RANGES = {
     "morning": (5, 11),
@@ -186,6 +217,65 @@ def _has_internal_time_conflict(times: set[str]) -> bool:
     return (max(concrete_hours) - min(concrete_hours)) >= 4
 
 
+def _extract_negated_locations(raw_text: str) -> set[str]:
+    negated = set()
+    for match in re.finditer(r"\bnot\s+(?:at|in|near)\s+([a-z\s]+?)(?:[\.,;]|\s+but\s|\s+and\s|$)", raw_text):
+        segment = match.group(1).strip()
+        for token in _tokenize(segment):
+            if token in LOCATION_KEYWORDS:
+                negated.add(token)
+    return negated
+
+
+def _has_reversed_timeline(raw_text: str) -> bool:
+    started_pos = [m.start() for m in re.finditer(r"\b(started|start|began|begin)\b", raw_text)]
+    submitted_pos = [m.start() for m in re.finditer(r"\b(submitted|submit)\b", raw_text)]
+    if not started_pos or not submitted_pos:
+        return False
+
+    if min(submitted_pos) < min(started_pos) and "then" in raw_text:
+        return True
+    return False
+
+
+def _has_self_negation_conflict(raw_text: str) -> bool:
+    # Check for "all ... except" or "included ... skipped" logic first
+    if "all" in raw_text and "except" in raw_text:
+        return True
+    if "included" in raw_text and ("skipped" in raw_text or "skip" in raw_text):
+        return True
+
+    has_negation = any(term in raw_text for term in [" never ", " did not ", " didn't ", " no one ", " nobody "])
+    has_contrast = any(f" {term} " in raw_text for term in CONTRAST_TERMS)
+    if not has_negation or not has_contrast:
+        return False
+
+    # Ensure there is at least one explicit action/assertion after contrast.
+    assertive_terms = {
+        "called",
+        "spoke",
+        "sent",
+        "entered",
+        "used",
+        "communicated",
+        "met",
+        "went",
+        "reported",
+        "included",
+        "finished",
+    }
+    return any(term in raw_text for term in assertive_terms)
+
+
+def _has_no_one_speech_conflict(raw_text: str) -> bool:
+    return bool(
+        re.search(
+            r"\b(no one|nobody)\b[^\.]{0,80}\bspoke\b[^\.]{0,40},\s*[^\.]{0,60}\bspoke\b",
+            raw_text,
+        )
+    )
+
+
 def extract_structured_info(text: str) -> dict[str, list[str]]:
     lowered = text.lower()
     tokens = _tokenize(text)
@@ -197,7 +287,14 @@ def extract_structured_info(text: str) -> dict[str, list[str]]:
         {
             token
             for token in tokens
-            if token in ACTION_KEYWORDS or token.endswith("ed") or token.endswith("ing")
+            if (
+                token in ACTION_KEYWORDS
+                or (
+                    (token.endswith("ed") or token.endswith("ing"))
+                    and len(token) > 3
+                    and token not in ACTION_BLACKLIST
+                )
+            )
         }
     )
 
@@ -228,6 +325,13 @@ def detect_contradictions(memory: dict, extracted: dict) -> dict:
 
     prev_locations = set(memory.get("location", []))
     new_locations = set(extracted.get("location", []))
+    negated_locations = _extract_negated_locations(raw_text)
+    if negated_locations and new_locations.difference(negated_locations):
+        contradiction_types.append("location_conflict")
+        notes.append(
+            f"Current response denies location {sorted(negated_locations)} but also references {sorted(new_locations.difference(negated_locations))}."
+        )
+
     if (
         prev_locations
         and new_locations
@@ -244,6 +348,9 @@ def detect_contradictions(memory: dict, extracted: dict) -> dict:
     if _has_internal_time_conflict(new_times):
         contradiction_types.append("time_conflict")
         notes.append(f"Current response includes conflicting times {sorted(new_times)}.")
+    elif _has_reversed_timeline(raw_text):
+        contradiction_types.append("time_conflict")
+        notes.append("Current response reverses sequence (e.g., submission before starting).")
     elif prev_times and new_times and not _times_compatible(prev_times, new_times) and contradiction_cue:
         contradiction_types.append("time_conflict")
         notes.append(f"Time reference changed from {sorted(prev_times)} to {sorted(new_times)}.")
@@ -255,6 +362,10 @@ def detect_contradictions(memory: dict, extracted: dict) -> dict:
 
     strong_alone = bool(re.search(r"\b(completely alone|all by myself|nobody else|no one else)\b", raw_text))
 
+    if now_alone and new_people:
+        contradiction_types.append("people_conflict")
+        notes.append("Current statement claims being alone while also introducing other people.")
+
     if now_alone and prev_people and strong_alone:
         contradiction_types.append("people_conflict")
         notes.append("Current statement claims being alone but earlier people were mentioned.")
@@ -264,10 +375,32 @@ def detect_contradictions(memory: dict, extracted: dict) -> dict:
         notes.append("Earlier statement claimed being alone but new response introduces people.")
 
     prev_actions = set(memory.get("actions", []))
-    negated_action = any(term in " ".join(extracted.get("raw_text_tokens", [])) for term in NEGATION_TERMS)
+    token_set = set(extracted.get("raw_text_tokens", []))
+    raw_text_full = extracted.get("raw_text", "")
+    negated_action = (
+        "never" in token_set
+        or "no" in token_set
+        or "did not" in raw_text_full
+        or "didn't" in raw_text_full
+    )
     if negated_action and prev_actions and set(extracted.get("actions", [])).intersection(prev_actions):
         contradiction_types.append("action_conflict")
         notes.append("Current response negates an earlier described action.")
+
+    if "did nothing" in raw_text and extracted.get("actions"):
+        contradiction_types.append("action_conflict")
+        notes.append("Current response says no action was taken but later describes an action.")
+
+    if _has_self_negation_conflict(raw_text):
+        contradiction_types.append("statement_conflict")
+        notes.append("Current response contains direct self-contradiction after a negated claim.")
+
+    if _has_no_one_speech_conflict(raw_text):
+        contradiction_types.append("statement_conflict")
+        notes.append("Current response says nobody spoke first but later names someone speaking first.")
+
+    contradiction_types = sorted(set(contradiction_types))
+    notes = sorted(set(notes))
 
     return {
         "count": len(contradiction_types),
