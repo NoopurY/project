@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { FaArrowRight, FaBrain, FaClock, FaRobot, FaWaveSquare } from "react-icons/fa";
-import { ChatBubble, ConsoleButton, ConsoleCard, MetricCard, ProgressBar } from "./ui";
+import { FaArrowRight, FaRobot } from "react-icons/fa";
+
+function bubbleClass(role, contradiction) {
+  if (role === "ai") {
+    return "self-start bg-[#191129] border border-violet-300/35 text-violet-50";
+  }
+  if (contradiction) {
+    return "self-end bg-rose-500/20 border border-rose-300/50 text-rose-100";
+  }
+  return "self-end bg-[#24173a] border border-violet-200/20 text-violet-50";
+}
 
 function listFromMemory(value) {
   if (!value || value.length === 0) {
@@ -71,8 +80,6 @@ function QuestionFlow({ scenario, demoMode, apiBase, onComplete }) {
     const fraction = Math.min(1, (baseIndex + (activeQuestion.type === "followup" ? 0.6 : 0.15)) / scenario.questions.length);
     return fraction * 100;
   }, [activeQuestion.type, baseIndex, scenario.questions.length]);
-
-  const activeRisk = analysis.contradiction_detected || analysis.contradiction_count > 1 ? "High" : analysis.contradiction_count > 0 ? "Medium" : "Low";
 
   const handleAnswerChange = (event) => {
     const value = event.target.value;
@@ -209,165 +216,99 @@ function QuestionFlow({ scenario, demoMode, apiBase, onComplete }) {
   };
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_340px]">
-      <ConsoleCard className="space-y-4 p-5" glow="violet">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-cyanGlow/80">Case Context</p>
-          <h3 className="mt-2 text-lg font-semibold text-white">{scenario.title}</h3>
-          <p className="mt-2 text-sm leading-6 text-muted">{scenario.description}</p>
+    <section className="grid gap-4 lg:grid-cols-[2fr,1fr]">
+      <div className="rounded-2xl border border-white/10 bg-steel/60 p-5 shadow-panel">
+        <div className="mb-4 flex items-center justify-between text-sm text-violet-100/80">
+          <span>Scenario: {scenario.title}</span>
+          <span>
+            Base Question {Math.min(baseIndex + 1, scenario.questions.length)} / {scenario.questions.length}
+          </span>
         </div>
-
-        <ProgressBar value={progress} label="Interrogation progress" tone="violet" />
-
-        <div className="grid gap-3">
-          <MetricCard
-            title="Base Question"
-            value={`${Math.min(baseIndex + 1, scenario.questions.length)} / ${scenario.questions.length}`}
-            detail={activeQuestion.type === "followup" ? "Follow-up probe active" : "Primary line of questioning"}
-            tone="neutral"
-          />
-          <MetricCard
-            title="Response Time"
-            value={`${(typingMs / 1000).toFixed(2)}s typing`}
-            detail={demoMode === "manual" ? "Measured live" : `Demo mode: ${demoMode}`}
-            tone="warning"
-          />
-        </div>
-
-        <div className="rounded-[1.1rem] border border-white/10 bg-white/5 p-4 text-sm text-muted">
-          <p className="mb-3 text-[10px] uppercase tracking-[0.26em] text-muted">Question Focus</p>
-          <p className="leading-6 text-text">{activeQuestion.text}</p>
-        </div>
-      </ConsoleCard>
-
-      <ConsoleCard className="flex min-h-[720px] flex-col p-5" glow="cyan">
-        <div className="mb-5 flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-cyanGlow/80">Interrogation Feed</p>
-            <h3 className="mt-2 text-2xl font-semibold text-white">One question at a time</h3>
-          </div>
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted">
-            <FaWaveSquare className="text-cyanGlow" />
-            Live signal tracing enabled
-          </div>
-        </div>
-
-        <div className="mb-4 h-2 overflow-hidden rounded-full bg-white/5 ring-1 ring-white/8">
+        <div className="mb-4 h-2 overflow-hidden rounded-full bg-[#10091a]">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-neon via-cyanGlow to-violetGlow"
+            className="h-full rounded-full bg-gradient-to-r from-neon to-ember"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.35 }}
           />
         </div>
 
-        <div className="mb-5 flex-1 space-y-4 overflow-y-auto rounded-[1.15rem] border border-white/10 bg-[#07111d]/90 p-4">
+        <div className="mb-4 flex h-[420px] flex-col gap-3 overflow-y-auto rounded-xl border border-white/10 bg-[#0c0917] p-4">
           {messages.map((message, index) => (
-            <ChatBubble
-              key={`${message.role}-${index}`}
-              role={message.role}
-              text={message.text}
-              contradiction={message.contradiction}
-            />
-          ))}
-
-          {isSubmitting ? (
-            <div className="flex items-center gap-2 self-start rounded-2xl border border-cyanGlow/20 bg-cyanGlow/10 px-4 py-3 text-sm text-cyanGlow">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-cyanGlow" />
-              AI is analyzing the response...
+            <div key={`${message.role}-${index}`} className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${bubbleClass(message.role, message.contradiction)}`}>
+              <p className="mb-1 text-[10px] uppercase tracking-[0.14em] text-violet-100/70">
+                {message.role === "ai" ? "AI Interrogator" : "Respondent"}
+              </p>
+              <p>{message.text}</p>
             </div>
-          ) : null}
+          ))}
         </div>
 
-        <div className="rounded-[1.15rem] border border-white/10 bg-[#0a1420] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
-          <label className="mb-2 block text-[10px] uppercase tracking-[0.26em] text-muted">
-            Respondent Input
-          </label>
+        <div className="rounded-xl border border-white/10 bg-[#130d20] p-3">
           <textarea
             value={answer}
             onChange={handleAnswerChange}
             rows={4}
-            placeholder="Type a direct answer. The console will measure timing and consistency."
-            className="w-full resize-none rounded-2xl border border-white/10 bg-[#060d16] p-4 text-sm leading-6 text-text outline-none transition placeholder:text-slate-500 focus:border-cyanGlow/30 focus:ring-2 focus:ring-cyanGlow/20"
+            placeholder="Enter your response..."
+            className="w-full rounded-lg border border-white/10 bg-[#0d0918] p-3 text-sm text-violet-50 outline-none ring-neon/50 transition focus:ring"
           />
 
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4 text-xs text-muted">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-                <FaClock className="text-cyanGlow" />
-                {(typingMs / 1000).toFixed(2)}s typing
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-                <FaBrain className="text-violetGlow" />
-                Session {records.length + 1}
-              </span>
-            </div>
-
-            <ConsoleButton type="button" disabled={isSubmitting} onClick={submitCurrentAnswer}>
-              {isSubmitting ? "Analyzing" : "Submit Response"}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs text-violet-100/80">Typing duration: {(typingMs / 1000).toFixed(2)}s</div>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={submitCurrentAnswer}
+              className="inline-flex items-center gap-2 rounded-lg bg-neon px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+            >
+              {isSubmitting ? "Analyzing..." : "Submit Response"}
               <FaArrowRight size={12} />
-            </ConsoleButton>
+            </button>
           </div>
         </div>
-      </ConsoleCard>
+      </div>
 
-      <ConsoleCard className="space-y-4 p-5" glow="blue">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyanGlow/20 bg-cyanGlow/10 text-cyanGlow">
-            <FaRobot />
+      <div className="space-y-4 rounded-2xl border border-white/10 bg-steel/60 p-5 shadow-panel">
+        <div className="flex items-center gap-2 text-neon">
+          <FaRobot />
+          <h3 className="text-base font-semibold text-white">AI Analysis Panel</h3>
+        </div>
+
+        <div className="grid gap-2 text-sm">
+          <div className="rounded-lg border border-white/10 bg-[#0d0918] p-3">
+            <p className="text-xs uppercase tracking-[0.12em] text-violet-200/55">Semantic Consistency</p>
+            <p className="mt-1 text-lg font-semibold text-white">{(analysis.semantic_consistency * 100).toFixed(1)}%</p>
           </div>
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-cyanGlow/80">AI Analysis</p>
-            <h3 className="mt-1 text-lg font-semibold text-white">Signal panel</h3>
+
+          <div className="rounded-lg border border-white/10 bg-[#0d0918] p-3">
+            <p className="text-xs uppercase tracking-[0.12em] text-violet-200/55">Contradiction Count</p>
+            <p className={`mt-1 text-lg font-semibold ${analysis.contradiction_count > 0 ? "text-rose-300" : "text-emerald-300"}`}>
+              {analysis.contradiction_count}
+            </p>
+            <p className="mt-1 text-xs text-violet-100/70">{analysis.contradiction_types.join(", ") || "No active contradiction type"}</p>
           </div>
         </div>
 
-        <MetricCard
-          title="Consistency Score"
-          value={`${(analysis.semantic_consistency * 100).toFixed(1)}%`}
-          detail="Semantic alignment across the current exchange"
-          tone="success"
-        />
-
-        <MetricCard
-          title="Contradictions Detected"
-          value={analysis.contradiction_count}
-          detail={analysis.contradiction_types.join(", ") || "No contradiction type active"}
-          tone={analysis.contradiction_count > 0 ? "danger" : "success"}
-        />
-
-        <MetricCard
-          title="Risk State"
-          value={activeRisk}
-          detail={activeRisk === "Low" ? "Stable statement profile" : "Escalate follow-up focus"}
-          tone={activeRisk === "High" ? "danger" : activeRisk === "Medium" ? "warning" : "success"}
-        />
-
-        <div className="rounded-[1.1rem] border border-white/10 bg-white/5 p-4 text-sm text-muted">
-          <p className="mb-3 text-[10px] uppercase tracking-[0.26em] text-muted">Context Memory</p>
-          <div className="space-y-2 text-sm leading-6">
-            <p>Location: {listFromMemory(analysis.memory?.location)}</p>
-            <p>Time: {listFromMemory(analysis.memory?.time)}</p>
-            <p>People: {listFromMemory(analysis.memory?.people)}</p>
-            <p>Actions: {listFromMemory(analysis.memory?.actions)}</p>
-          </div>
+        <div className="rounded-lg border border-white/10 bg-[#0d0918] p-3 text-xs text-violet-100/80">
+          <p className="mb-2 uppercase tracking-[0.12em] text-violet-200/55">Context Memory</p>
+          <p>Location: {listFromMemory(analysis.memory?.location)}</p>
+          <p>Time: {listFromMemory(analysis.memory?.time)}</p>
+          <p>People: {listFromMemory(analysis.memory?.people)}</p>
+          <p>Actions: {listFromMemory(analysis.memory?.actions)}</p>
         </div>
 
         {analysis.latest_contradiction_notes?.length > 0 && (
-          <div className="rounded-[1.1rem] border border-danger/30 bg-danger/10 p-4 text-sm text-rose-100">
-            <p className="mb-2 text-[10px] uppercase tracking-[0.26em] text-rose-200/80">Alert Notes</p>
-            <div className="space-y-2 leading-6">
-              {analysis.latest_contradiction_notes.map((note) => (
-                <p key={note}>{note}</p>
-              ))}
-            </div>
+          <div className="rounded-lg border border-rose-300/40 bg-rose-500/10 p-3 text-xs text-rose-100">
+            {analysis.latest_contradiction_notes.map((note) => (
+              <p key={note}>{note}</p>
+            ))}
           </div>
         )}
 
-        <p className="text-xs leading-5 text-muted">
+        <p className="text-xs text-violet-100/65">
           This system estimates behavioral and linguistic patterns. It does not determine absolute truth.
         </p>
-      </ConsoleCard>
+      </div>
     </section>
   );
 }
