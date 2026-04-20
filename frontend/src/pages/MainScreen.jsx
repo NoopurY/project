@@ -3,6 +3,7 @@ import { FaShieldAlt } from "react-icons/fa";
 import ScenarioSelector from "../components/ScenarioSelector";
 import QuestionFlow from "../components/QuestionFlow";
 import ResultDashboard from "../components/ResultDashboard";
+import { ConsoleCard } from "../components/ui";
 
 function MainScreen({
   phase,
@@ -17,26 +18,32 @@ function MainScreen({
   onRestart,
 }) {
   return (
-    <div className="pattern-grid min-h-screen px-4 py-8 sm:px-6 lg:px-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <header className="rounded-2xl border border-white/10 bg-steel/60 p-6 shadow-panel backdrop-blur">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="pattern-grid min-h-screen px-4 py-6 sm:px-6 lg:px-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <ConsoleCard className="overflow-hidden px-5 py-4 sm:px-6" glow="violet">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-neon/80">Behavioral Intelligence Suite</p>
-              <h1 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-cyanGlow/90">
+                Behavioral Intelligence Suite
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
                 Behavioral Lie Detection System
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
-                AI-driven interrogation assistant with adaptive counter-questioning,
-                contradiction detection, and semantic consistency analysis.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
+                Intelligence-grade interrogation console for contradiction detection,
+                response analysis, and risk scoring in high-stakes reviews.
               </p>
             </div>
-            <div className="flex items-center gap-2 rounded-xl border border-neon/40 bg-neon/10 px-4 py-2 text-neon">
+
+            <div className="inline-flex items-center gap-3 rounded-2xl border border-cyanGlow/20 bg-cyanGlow/10 px-4 py-3 text-cyanGlow shadow-[0_0_24px_rgba(34,211,238,0.12)]">
               <FaShieldAlt />
-              <span className="text-sm font-medium">For Investigative Decision Support</span>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.28em] text-cyanGlow/75">System Status</p>
+                <p className="text-sm font-medium text-white">For investigative decision support</p>
+              </div>
             </div>
           </div>
-        </header>
+        </ConsoleCard>
 
         <AnimatePresence mode="wait">
           {phase === "select" && (
@@ -74,7 +81,7 @@ function MainScreen({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="rounded-2xl border border-white/10 bg-steel/60 p-10 text-center shadow-panel"
+              className="rounded-[1.35rem] border border-white/10 bg-[#0f1724]/80 p-10 text-center shadow-glow backdrop-blur-xl"
             >
               <div className="mx-auto mb-5 flex w-16 gap-1">
                 <span className="h-6 w-1 animate-pulseLine rounded bg-neon" />
@@ -82,8 +89,8 @@ function MainScreen({
                 <span className="h-6 w-1 animate-pulseLine rounded bg-neon [animation-delay:0.4s]" />
                 <span className="h-6 w-1 animate-pulseLine rounded bg-neon [animation-delay:0.6s]" />
               </div>
-              <h2 className="text-xl font-semibold text-white">Analyzing Behavioral Signals...</h2>
-              <p className="mt-2 text-sm text-slate-300">
+              <h2 className="text-xl font-semibold text-white">Analyzing behavioral signals</h2>
+              <p className="mt-2 text-sm text-muted">
                 Computing behavioral timing, semantic consistency, and contradiction signals.
               </p>
               {isLoading ? null : null}

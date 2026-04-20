@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,6 +6,10 @@
 
 :root {
   color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
@@ -15,12 +19,27 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Sora", sans-serif;
+  font-family: "Space Grotesk", sans-serif;
+  background-color: #0b0f14;
   background:
-    radial-gradient(circle at 15% 20%, rgba(55, 208, 217, 0.15), transparent 35%),
-    radial-gradient(circle at 80% 0%, rgba(249, 115, 22, 0.18), transparent 30%),
-    linear-gradient(145deg, #04090f 0%, #06111c 45%, #09192a 100%);
-  color: #e9f4ff;
+    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.18), transparent 30%),
+    radial-gradient(circle at 82% 10%, rgba(139, 92, 246, 0.16), transparent 28%),
+    radial-gradient(circle at 55% 85%, rgba(34, 211, 238, 0.1), transparent 32%),
+    linear-gradient(145deg, #0b0f14 0%, #0f1724 52%, #111827 100%);
+  color: #e5e7eb;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.28));
+  opacity: 0.45;
 }
 
 #root {
@@ -28,8 +47,22 @@ body {
 }
 
 .pattern-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 28px 28px;
+  position: relative;
+  isolation: isolate;
+}
+
+.pattern-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.08), transparent 24%),
+    radial-gradient(circle at 90% 20%, rgba(139, 92, 246, 0.08), transparent 20%),
+    radial-gradient(circle at 50% 100%, rgba(34, 211, 238, 0.06), transparent 30%);
+}
+
+::selection {
+  background: rgba(59, 130, 246, 0.32);
+  color: #f8fafc;
 }
