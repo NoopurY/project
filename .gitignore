@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+venv/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# ML / artifacts
+ml/data/synthetic_behavior_data.csv
+ml/data/lie_model.pkl
+
+# OS
+.DS_Store
+Thumbs.db
