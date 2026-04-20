@@ -19,6 +19,7 @@ body {
   background:
     radial-gradient(circle at 15% 20%, rgba(168, 85, 247, 0.22), transparent 35%),
     radial-gradient(circle at 82% 0%, rgba(107, 33, 168, 0.2), transparent 30%),
+    radial-gradient(circle at 70% 85%, rgba(217, 70, 239, 0.12), transparent 34%),
     linear-gradient(145deg, #030304 0%, #07070b 48%, #0f0718 100%);
   color: #f3ecff;
 }
@@ -29,7 +30,14 @@ body {
 
 .pattern-grid {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 28px 28px;
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0,
+      transparent 14px,
+      rgba(168, 85, 247, 0.03) 14px,
+      rgba(168, 85, 247, 0.03) 15px
+    );
+  background-size: 28px 28px, 28px 28px, auto;
 }
