@@ -133,7 +133,7 @@ function App() {
         contradictions: 0,
         metrics: {},
         explanation: [
-          "The API could not be reached. Ensure FastAPI is running on http://127.0.0.1:8000.",
+          `The API could not be reached at ${API_BASE}. Verify VITE_API_BASE_URL in Vercel and backend CORS settings.`,
         ],
         model_used: "Unavailable",
         disclaimer:
