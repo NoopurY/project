@@ -115,14 +115,17 @@ def compute_features(
     if len(responses) != len(response_times):
         raise ValueError("responses and response_times lengths must match.")
 
+    # Clean up response_times and typing_durations to handle potential nulls from frontend
+    clean_times = [float(t) if t is not None else 0.0 for t in response_times]
+    
     if typing_durations is None:
-        typing_durations = [max(0.1, t * 0.65) for t in response_times]
+        clean_typing = [max(0.1, t * 0.65) for t in clean_times]
+    else:
+        clean_typing = [float(d) if d is not None else max(0.1, clean_times[i] * 0.65) 
+                        for i, d in enumerate(typing_durations)]
 
-    if len(typing_durations) != len(responses):
-        raise ValueError("typing_durations length must match responses length.")
-
-    response_times_np = np.array(response_times, dtype=float)
-    typing_np = np.array(typing_durations, dtype=float)
+    response_times_np = np.array(clean_times, dtype=float)
+    typing_np = np.array(clean_typing, dtype=float)
     word_lengths = np.array([max(1, len(_tokenize(text))) for text in responses], dtype=float)
 
     avg_time = float(np.mean(response_times_np))
@@ -193,10 +196,14 @@ def build_metrics_snapshot(
     lengths = [len(response.split()) for response in responses]
     mean_length = float(np.mean(lengths)) if lengths else 0.0
 
+    clean_times = [float(t) if t is not None else 0.0 for t in response_times]
     if typing_durations is None:
-        typing_durations = [max(0.1, t * 0.65) for t in response_times]
+        clean_typing = [max(0.1, t * 0.65) for t in clean_times]
+    else:
+        clean_typing = [float(d) if d is not None else max(0.1, clean_times[i] * 0.65) 
+                        for i, d in enumerate(typing_durations)]
 
-    avg_typing = float(np.mean(typing_durations)) if typing_durations else 0.0
+    avg_typing = float(np.mean(clean_typing)) if clean_typing else 0.0
 
     return {
         "average_response_time": round(features["avg_response_time"], 3),

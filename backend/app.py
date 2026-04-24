@@ -46,5 +46,48 @@ def health_check():
     return {"status": "ok"}
 
 
+from fastapi import Request, HTTPException
+from fastapi.responses import JSONResponse
+
+# Add a global exception handler to ensure CORS headers are present on all errors
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    response = JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+    
+    # Manually add CORS headers to error responses
+    origin = request.headers.get("origin")
+    if origin:
+        if "*" in allowed_origins or origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin if "*" not in allowed_origins else "*"
+            response.headers["Access-Control-Allow-Credentials"] = "true" if "*" not in allowed_origins else "false"
+            response.headers["Access-Control-Allow-Methods"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            
+    return response
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    # Log the full error for debugging in Render
+    print(f"UNEXPECTED ERROR: {str(exc)}")
+    import traceback
+    traceback.print_exc()
+    
+    response = JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "error": str(exc)},
+    )
+    
+    # Manually add CORS headers
+    origin = request.headers.get("origin")
+    if origin:
+        if "*" in allowed_origins or origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin if "*" not in allowed_origins else "*"
+            response.headers["Access-Control-Allow-Credentials"] = "true" if "*" not in allowed_origins else "false"
+            
+    return response
+
 app.include_router(predict_router)
 app.include_router(followup_router)

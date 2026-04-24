@@ -22,8 +22,8 @@ DISCLAIMER_TEXT = (
 
 class PredictRequest(BaseModel):
     responses: list[str] = Field(..., min_length=1)
-    times: list[float] = Field(..., min_length=1)
-    typing_durations: list[float] | None = None
+    times: list[float | None] = Field(..., min_length=1)
+    typing_durations: list[float | None] | None = None
     demo_mode: str | None = None
 
     @model_validator(mode="after")
