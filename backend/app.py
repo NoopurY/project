@@ -19,15 +19,10 @@ default_origins = [
     "http://127.0.0.1:5173",
 ]
 
-# Handle ALLOWED_ORIGINS from environment, defaulting to localhost for development
-raw_origins = os.getenv("ALLOWED_ORIGINS", "")
-
-# Auto-allow all if on Render and no origins specified to reduce friction
-if not raw_origins and os.getenv("RENDER"):
-    raw_origins = "*"
-
+# Handle ALLOWED_ORIGINS from environment, defaulting to '*' for maximum compatibility
+raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
 configured_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
-allowed_origins = configured_origins or default_origins
+allowed_origins = configured_origins or ["*"]
 
 # If "*" is in allowed_origins, we must set allow_credentials=False
 allow_all = "*" in allowed_origins
