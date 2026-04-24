@@ -21,6 +21,11 @@ default_origins = [
 
 # Handle ALLOWED_ORIGINS from environment, defaulting to localhost for development
 raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+
+# Auto-allow all if on Render and no origins specified to reduce friction
+if not raw_origins and os.getenv("RENDER"):
+    raw_origins = "*"
+
 configured_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 allowed_origins = configured_origins or default_origins
 
