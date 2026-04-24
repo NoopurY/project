@@ -19,14 +19,18 @@ default_origins = [
     "http://127.0.0.1:5173",
 ]
 
+# Handle ALLOWED_ORIGINS from environment, defaulting to localhost for development
 raw_origins = os.getenv("ALLOWED_ORIGINS", "")
 configured_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 allowed_origins = configured_origins or default_origins
 
+# If "*" is in allowed_origins, we must set allow_credentials=False
+allow_all = "*" in allowed_origins
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=not allow_all,
     allow_methods=["*"],
     allow_headers=["*"],
 )
